@@ -8,8 +8,8 @@ import (
 )
 
 func HandleLogin(ctx context.Context) {
-	username := ctx.PostValue("username")
-	password := ctx.PostValue("password")
+	username := ctx.FormValue("username")
+	password := ctx.FormValue("password")
 	resultBol := dao.CheckUserPassword(username, password)
 	if resultBol {
 		page := util.BuildPageUnlimited()

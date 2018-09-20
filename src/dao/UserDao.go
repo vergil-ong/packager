@@ -14,6 +14,7 @@ type User struct {
 	GENDER   int       `gorm:"column:gender" json:"sex"`
 	SLUG     string    `gorm:"column:slug" json:"slug"`
 	PASSWORD string    `gorm:"column:password" json:"password"`
+	AGE      int       `gorm:"column:age" json:"age"`
 }
 
 func (User) TableName() string {
@@ -46,7 +47,11 @@ func ListUsers(slug string, page util.Page) []User {
 	}
 
 	var users []User
-	where := db.Where("slug = ? ", slug,)
+	where := db
+	fmt.Println(slug)
+	if slug != "" {
+		where = where.Where("name like ?", "%"+slug+"%",)
+	}
 	pageDB := where
 	if page.GetOffset() != -1 {
 		pageDB = where.Offset(page.GetOffset()).Limit(page.GetLimit())
