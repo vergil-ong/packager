@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"util"
+	"strconv"
 )
 
 type User struct {
@@ -16,6 +17,11 @@ type User struct {
 	PASSWORD string    `gorm:"column:password" json:"password"`
 	AGE      int       `gorm:"column:age" json:"age"`
 }
+
+const DEFAULT_SEX_STR string  = "0"
+const DEFAULT_AGE_STR string  = "18"
+const DEFAULT_BIRTH_STR string  = "2018-09-21"
+const DEFAULT_TIME_FORMAT string  = "2006-01-02"
 
 func (User) TableName() string {
 	return "user"
@@ -127,4 +133,58 @@ func InsertUser(user User) bool {
 	defer db.Close()
 
 	return true
+}
+
+func BuildUser(
+	id string,
+	username string,
+	sex string,
+	age string,
+	birth string,
+	addr string,
+	slug string,
+	password string) User{
+
+	user := new(User)
+	if id != "" {
+		idInt, err := strconv.Atoi(id)
+		if err!=nil {
+			fmt.Println(err)
+			panic("parse id int error")
+		}
+		user.ID = uint(idInt)
+	}
+
+	user.NAME = username
+	if sex == "" {
+		sex = DEFAULT_SEX_STR
+	}
+	sexInt, err := strconv.Atoi(sex)
+	if err!=nil {
+		fmt.Println(err)
+		panic("parse sex int error")
+	}
+	user.GENDER = sexInt
+	if age == "" {
+		age = DEFAULT_AGE_STR
+	}
+	ageInt, err := strconv.Atoi(age)
+	if err!=nil {
+		fmt.Println(err)
+		panic("parse age int error")
+	}
+	user.AGE = ageInt
+	if birth == "" {
+		birth = DEFAULT_BIRTH_STR
+	}
+	birthTime, err := time.Parse(DEFAULT_TIME_FORMAT, birth)
+	if err != nil {
+		fmt.Println(err)
+		panic("parse birth to time error")
+	}
+	user.BIRTH = birthTime
+	user.ADDR = addr
+	user.SLUG = slug
+	user.PASSWORD = password
+	return *user
 }
