@@ -27,23 +27,24 @@ func (User) TableName() string {
 	return "user"
 }
 
-func CheckUserPassword(slug string, password string) bool {
+func CheckUserPassword(slug string, password string) (User,bool) {
 	db, err := util.GetDBConnection()
 	if err != nil {
 		panic("connection failure")
 	}
 
+	var nilUser User
 	var users []User
 	db.Where("slug = ? and password = ?", slug, password).Find(&users)
 
 	if len(users) != 0 {
-		return true
+		return users[0],true
 	} else {
-		return false
+		return nilUser,false
 	}
 	defer db.Close()
 
-	return false
+	return nilUser,false
 }
 
 func ListUsers(slug string, page util.Page) []User {

@@ -10,12 +10,10 @@ import (
 func HandleLogin(ctx context.Context) {
 	username := ctx.FormValue("username")
 	password := ctx.FormValue("password")
-	resultBol := dao.CheckUserPassword(username, password)
+	user,resultBol := dao.CheckUserPassword(username, password)
 	if resultBol {
-		page := util.BuildPageUnlimited()
-		users := dao.ListUsers(username, page)
 		userMap := iris.Map{
-			"user":users[0],
+			"user":user,
 		}
 		//登陆成功
 		ctx.JSON(util.BuildIrisMap(true, "登陆成功", userMap))
