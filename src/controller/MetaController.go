@@ -7,7 +7,10 @@ import (
 	"strings"
 	"os"
 	"io"
+	"util"
 )
+
+const UPLOAD_DIR string = "D:/uploads/"
 
 func Upload(ctx context.Context) {
 	file, info, err := ctx.FormFile("uploadfile")
@@ -20,9 +23,7 @@ func Upload(ctx context.Context) {
 	defer file.Close()
 	fname := info.Filename
 
-	// Create a file with the same name
-	// assuming that you have a folder named 'uploads'
-	out, err := os.OpenFile("D:/uploads/"+fname,
+	out, err := os.OpenFile(UPLOAD_DIR+fname,
 		os.O_WRONLY|os.O_CREATE, 0666)
 
 	if err != nil {
@@ -36,8 +37,8 @@ func Upload(ctx context.Context) {
 
 	/*resultMap := iris.Map{
 		"patches":patches,
-	}
-	ctx.JSON(util.BuildIrisMap(true, "获取patch信息成功", resultMap))*/
+	}*/
+	ctx.JSON(util.BuildIrisMap(true, "上传成功", nil))
 }
 
 func beforeSave(ctx iris.Context, file *multipart.FileHeader) {

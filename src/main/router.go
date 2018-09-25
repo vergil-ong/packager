@@ -41,6 +41,11 @@ func main() {
 	// listen and serve on http://0.0.0.0:8080.
 
 	app.Post("/Upload",controller.Upload)
+	app.Options("/Upload", func(ctx context.Context) {
+		ctx.JSON(iris.Map{
+			"message": "pong",
+		})
+	})
 
 	app.Run(iris.Addr(":8652"))
 }
