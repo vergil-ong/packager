@@ -42,9 +42,11 @@ func main() {
 
 	app.Post("/Upload",controller.Upload)
 	app.Options("/Upload", func(ctx context.Context) {
-		ctx.JSON(iris.Map{
-			"message": "pong",
-		})
+		ctx.StatusCode(204)
+		ctx.Header("access-control-allow-credentials","true")
+		ctx.Header("access-control-allow-headers","content-type")
+		ctx.Header("access-control-allow-methods","GET,HEAD,PUT,PATCH,POST,DELETE")
+		ctx.Header("access-control-allow-origin","*")
 	})
 
 	app.Run(iris.Addr(":8652"))
