@@ -33,10 +33,10 @@ func main() {
 	patcher := app.Party(baseUrl+"/patch")
 	{
 		patcher.Get("/list_page",controller.ListPatchesPages)
-		//patcher.Delete("remove")
+		patcher.Delete("/remove",controller.RemovePatch)
 		//patcher.Delete("batch_remove")
 		//patcher.Put("edit")
-		//patcher.Post("add")
+		patcher.Post("/add",controller.AddPatch)
 	}
 	// listen and serve on http://0.0.0.0:8080.
 

@@ -9,6 +9,7 @@ import (
 	"io"
 	"fmt"
 	"util"
+	"dao"
 )
 
 const UPLOAD_DIR string = "D:/uploads/"
@@ -45,9 +46,17 @@ func Upload(ctx context.Context) {
 	/*resultMap := iris.Map{
 		"patches":patches,
 	}*/
+	pageUnlimited := util.BuildPageUnlimited()
+	recommendations := dao.ListRecommendationsMaxAppear(fname, pageUnlimited)
+	var path string;
+	if recommendations != nil && len(recommendations)>0 {
+		path = recommendations[0].Path
+	}
+
 	resultMap := iris.Map{
 		"fname": fname,
 		"group": group,
+		"file_path":path,
 	}
 	ctx.Header("access-control-allow-origin","*")
 	ctx.JSON(resultMap)

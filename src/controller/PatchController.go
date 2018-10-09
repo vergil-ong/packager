@@ -27,11 +27,11 @@ func RemovePatch(ctx context.Context) {
 		panic("parse id int error")
 	}
 
-	delRes := dao.DelUser(idInt)
+	delRes := dao.DelPatch(idInt)
 	userMap := iris.Map{
 		"del_res":delRes,
 	}
-	ctx.JSON(util.BuildIrisMap(true, "删除用户信息成功", userMap))
+	ctx.JSON(util.BuildIrisMap(true, "删除patch信息成功", userMap))
 }
 
 func BatchRemovePatches(ctx context.Context) {
@@ -71,21 +71,19 @@ func EditPatch(ctx context.Context) {
 	ctx.JSON(util.BuildIrisMap(true, "修改用户信息成功", userMap))
 }
 
-func AdPatch(ctx context.Context) {
-	username := ctx.FormValue("name")
-	sex := ctx.FormValue("sex")
-	age := ctx.FormValue("age")
-	birth := ctx.FormValue("birth")
-	addr := ctx.FormValue("addr")
-	slug := ctx.FormValue("slug")
-	password := ctx.FormValue("password")
+func AddPatch(ctx context.Context) {
+	patchName := ctx.FormValue("patch_name")
+	meta := ctx.FormValue("meta")
+	patchShell := ctx.FormValue("patch_shell")
+	patchType := ctx.FormValue("patch_type")
+	patchVersion := ctx.FormValue("patch_version")
 
-	user := dao.BuildUser("",username, sex, age, birth, addr, slug, password)
+	patch := dao.BuildPatch("", patchName, patchType, patchVersion, meta, patchShell, "")
 
-	insertUser := dao.InsertUser(user)
+	insertPatch := dao.InsertPatch(patch)
 
-	userMap := iris.Map{
-		"user":insertUser,
+	resultMap := iris.Map{
+		"patch":insertPatch,
 	}
-	ctx.JSON(util.BuildIrisMap(true, "插入用户信息成功", userMap))
+	ctx.JSON(util.BuildIrisMap(true, "添加patch成功", resultMap))
 }

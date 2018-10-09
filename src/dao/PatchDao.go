@@ -2,6 +2,8 @@ package dao
 
 import (
 	"util"
+	"strconv"
+	"fmt"
 )
 
 type Patch struct {
@@ -38,4 +40,68 @@ func ListPatches(patchName string, page util.Page) []Patch {
 	defer db.Close()
 
 	return patches
+}
+
+func InsertPatch(patch Patch) bool {
+	db, err := util.GetDBConnection()
+	if err != nil {
+		panic("connection failure")
+	}
+	e := db.Create(&patch).Error
+	if e != nil {
+		err := e.Error()
+		fmt.Println(err)
+		return false
+	}
+	defer db.Close()
+
+	return true
+}
+
+func DelPatch(id int) bool {
+	db, err := util.GetDBConnection()
+	if err != nil {
+		panic("connection failure")
+	}
+
+	if err := db.Where("id = ?", id).Delete(Patch{}).Error; err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+
+	defer db.Close()
+
+	return true
+}
+
+func BuildPatch(
+	id string,
+	name string,
+	patchType string,
+	patchVersion string,
+	patchMeta string,
+	patchShell string,
+	patchFile string,
+) Patch{
+
+	patch := new(Patch)
+
+	if id != "" {
+		idInt, err := strconv.Atoi(id)
+		if err!=nil {
+			fmt.Println(err)
+			panic("parse id int error")
+		}
+		patch.ID = uint(idInt)
+	}
+
+	patch.NAME = name
+	patch.PatchType = patchType
+	patch.PatchVersion = patchVersion
+	patch.PatchMeta = patchMeta
+	patch.PatchShell = patchShell
+	patch.PatchFile = patchFile
+
+	return *patch
+
 }
