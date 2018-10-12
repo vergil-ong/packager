@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"tools"
 	"os"
+	"io/ioutil"
 )
 
 func ListPatchesPages(ctx context.Context) {
@@ -93,13 +94,11 @@ func AddPatch(ctx context.Context) {
 	patchPath := string([]rune(patchName)[:dotIndex])
 
 	serial := util.GenerateSerial()
-	currentTargetPath := util.TarStorePath+serial+"/"+patchPath
+	tempBasePath := util.TarStorePath+serial+"/"+patchPath
+	//copy dir source
+	currentTargetPath := tempBasePath+"/dir"
 	tools.CreateDir(currentTargetPath)
 	for _,item := range jsonMapArray {
-		/*fileID,err := strconv.Atoi(item["fileID"].(string));
-		if err != nil {
-			fmt.Println("fileID类型转换错误",item["fileID"])
-		}*/
 		fileID := int(item["fileID"].(float64))
 		targetPath := item["filePath"].(string)
 		fileInfo := dao.GetFileInfoByID(fileID)
@@ -111,15 +110,24 @@ func AddPatch(ctx context.Context) {
 		fmt.Println(currentTargetPath)
 		tools.CopyLocalFileToTarget(fileInfo.LocalPath,currentTargetPath,serial)
 	}
+	//make patch.sh
+	patchShellPath := tempBasePath+"/patch.sh"
+	ioutil.WriteFile(patchShellPath,[]byte (patchShell),os.ModePerm)
+
+	//make MetaInfo
+	metaInfoPath := tempBasePath+"/META-INF"
+	tools.CreateDir(metaInfoPath)
+	ioutil.WriteFile(metaInfoPath+"/MANIFEST.MF",[]byte (meta),os.ModePerm)
+
 
 	//targetFile := currentTargetPath+".tgz"
 	tgzFile := util.TarStorePath+serial+"/"+patchName
-	err := tools.TarGZFiles(currentTargetPath,tgzFile, false)
+	err := tools.TarGZFiles(tempBasePath+"/",tgzFile, false)
 	if err != nil {
 		fmt.Println("tgz fail")
 	}
 
-	os.RemoveAll(currentTargetPath)
+	os.RemoveAll(tempBasePath)
 
 	patch := dao.BuildPatch("", patchName, patchType, patchVersion, meta, patchShell, tgzFile)
 
@@ -129,4 +137,17 @@ func AddPatch(ctx context.Context) {
 		"patch":insertPatch,
 	}
 	ctx.JSON(util.BuildIrisMap(true, "添加patch成功", resultMap))
+}
+func DownloadPatch(ctx context.Context) {
+	idStr := ctx.URLParam("id")
+	patchID,err := strconv.Atoi(idStr)
+	if err != nil {
+		fmt.Println("ID转换错误")
+	}
+	patch := dao.GetPatchById(uint(patchID))
+	patchFile := patch.PatchFile
+
+	ctx.Header("Content-Type","application/x-gzip")
+	ctx.Header("Content-Disposition","attachment;filename="+patch.NAME)
+	ctx.ServeFile(patchFile,false)
 }

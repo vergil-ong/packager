@@ -37,6 +37,7 @@ func main() {
 		//patcher.Delete("batch_remove")
 		//patcher.Put("edit")
 		patcher.Post("/add",controller.AddPatch)
+		patcher.Get("/download",controller.DownloadPatch)
 	}
 	// listen and serve on http://0.0.0.0:8080.
 

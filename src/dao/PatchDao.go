@@ -19,6 +19,21 @@ type Patch struct {
 func (Patch) TableName() string {
 	return "patch"
 }
+func GetPatchById(id uint) Patch {
+	db, err := util.GetDBConnection()
+	if err != nil {
+		panic("connection failure")
+	}
+
+	var patche Patch
+	where := db
+	where = where.Where("id = ?", id,)
+	where.Find(&patche)
+
+	defer db.Close()
+
+	return patche
+}
 
 func ListPatches(patchName string, page util.Page) []Patch {
 	db, err := util.GetDBConnection()
