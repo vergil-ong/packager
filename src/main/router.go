@@ -40,13 +40,13 @@ func main() {
 	}
 	// listen and serve on http://0.0.0.0:8080.
 
-	app.Post("/Upload",controller.Upload)
-	app.Options("/Upload", func(ctx context.Context) {
+	app.Post("/meta/Upload",controller.Upload)
+	app.Options("/meta/Upload", func(ctx context.Context) {
 		ctx.StatusCode(204)
 		ctx.Header("access-control-allow-credentials","true")
 		ctx.Header("access-control-allow-headers","content-type")
 		ctx.Header("access-control-allow-methods","GET,HEAD,PUT,PATCH,POST,DELETE")
-		ctx.Header("access-control-allow-origin","*")
+		ctx.Header("Access-Control-Allow-Origin","*")
 	})
 
 	app.Run(iris.Addr(":8652"))

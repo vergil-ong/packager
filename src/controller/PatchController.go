@@ -7,6 +7,10 @@ import (
 	"github.com/kataras/iris"
 	"strconv"
 	"strings"
+	"encoding/json"
+	"fmt"
+	"tools"
+	"os"
 )
 
 func ListPatchesPages(ctx context.Context) {
@@ -78,7 +82,46 @@ func AddPatch(ctx context.Context) {
 	patchType := ctx.FormValue("patch_type")
 	patchVersion := ctx.FormValue("patch_version")
 
-	patch := dao.BuildPatch("", patchName, patchType, patchVersion, meta, patchShell, "")
+	fileInfosStr := ctx.FormValue("fileInfos")
+	var jsonMapArray []map[string]interface{}
+	if err := json.Unmarshal([]byte(fileInfosStr), &jsonMapArray); err == nil {
+		fmt.Println("==============json array str to map array error=======================")
+	}
+
+
+	dotIndex := strings.LastIndex(patchName,".")
+	patchPath := string([]rune(patchName)[:dotIndex])
+
+	serial := util.GenerateSerial()
+	currentTargetPath := util.TarStorePath+serial+"/"+patchPath
+	tools.CreateDir(currentTargetPath)
+	for _,item := range jsonMapArray {
+		/*fileID,err := strconv.Atoi(item["fileID"].(string));
+		if err != nil {
+			fmt.Println("fileID类型转换错误",item["fileID"])
+		}*/
+		fileID := int(item["fileID"].(float64))
+		targetPath := item["filePath"].(string)
+		fileInfo := dao.GetFileInfoByID(fileID)
+		fileInfo.TargetPath = targetPath
+		dao.UpdateFileInfo(fileInfo)
+
+		currentTargetPath := currentTargetPath+targetPath
+		fmt.Println(fileInfo.LocalPath)
+		fmt.Println(currentTargetPath)
+		tools.CopyLocalFileToTarget(fileInfo.LocalPath,currentTargetPath,serial)
+	}
+
+	//targetFile := currentTargetPath+".tgz"
+	tgzFile := util.TarStorePath+serial+"/"+patchName
+	err := tools.TarGZFiles(currentTargetPath,tgzFile, false)
+	if err != nil {
+		fmt.Println("tgz fail")
+	}
+
+	os.RemoveAll(currentTargetPath)
+
+	patch := dao.BuildPatch("", patchName, patchType, patchVersion, meta, patchShell, tgzFile)
 
 	insertPatch := dao.InsertPatch(patch)
 

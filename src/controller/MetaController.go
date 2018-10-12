@@ -10,9 +10,8 @@ import (
 	"fmt"
 	"util"
 	"dao"
+	"strconv"
 )
-
-const UPLOAD_DIR string = "D:/uploads/"
 
 func Upload(ctx context.Context) {
 	file, info, err := ctx.FormFile("file")
@@ -31,7 +30,23 @@ func Upload(ctx context.Context) {
 		group = util.GenerateSerial()
 	}
 
-	out, err := os.OpenFile(UPLOAD_DIR+fname,
+	fileSep := "/"
+	localPath := util.FileStorePath+group+fileSep
+	os.MkdirAll(util.FileStorePath+group+fileSep,0666)
+	fileInfo := dao.BuildFileInfo("", "", localPath, group)
+	insertFileInfo, e := dao.InsertFileInfo(fileInfo)
+	if e!=nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON("Error while uploading: <b>" + err.Error() + "</b>")
+		return
+	}
+	fileIDStr := strconv.Itoa(int(insertFileInfo.ID))
+	localPath = util.FileStorePath+group+fileSep+fileIDStr+fileSep
+	os.MkdirAll(localPath,0666)
+	localPath = util.FileStorePath+group+fileSep+fileIDStr+fileSep+fname
+
+
+	out, err := os.OpenFile(localPath,
 		os.O_WRONLY|os.O_CREATE, 0666)
 
 	if err != nil {
@@ -52,11 +67,27 @@ func Upload(ctx context.Context) {
 	if recommendations != nil && len(recommendations)>0 {
 		path = recommendations[0].Path
 	}
+	//fileInfo = dao.BuildFileInfo("", path, localPath, group)
+	//insertFileInfo, e := dao.InsertFileInfo(fileInfo)
+	//if e!=nil {
+	//	ctx.StatusCode(iris.StatusInternalServerError)
+	//	ctx.JSON("Error while uploading: <b>" + err.Error() + "</b>")
+	//	return
+	//}
+	//更新文件存储路径
+	fileInfo.ID = insertFileInfo.ID
+	fileInfo.TargetPath = path
+	//fileInfo.LocalPath = strings.Replace(localPath,".","\\.",-1)
+	fileInfo.LocalPath = localPath
+	dao.UpdateFileInfo(fileInfo)
+
+	//fmt.Println(insertFileInfo.ID)
 
 	resultMap := iris.Map{
 		"fname": fname,
 		"group": group,
 		"file_path":path,
+		"file_info_id":insertFileInfo.ID,
 	}
 	ctx.Header("access-control-allow-origin","*")
 	ctx.JSON(resultMap)
