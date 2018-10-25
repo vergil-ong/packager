@@ -8,6 +8,8 @@ import (
 	"controller"
 )
 
+const FileRootPath string = "D:/GoProjects/packager/src/dist/"
+
 func HandlePingGet(ctx context.Context) {
 	testString := ctx.Params().Get("test")
 	fmt.Println(testString)
@@ -16,8 +18,26 @@ func HandlePingGet(ctx context.Context) {
 	})
 }
 
+type Recommendation struct {
+	ID           		uint   `gorm:"column:id" json:"id"`
+	FileName         	string `gorm:"column:file_name" json:"file_name"`
+	Path    			string `gorm:"column:path" json:"path"`
+	AppearTimes 		int `gorm:"column:appear_times" json:"appear_times"`
+}
+
+
 func main() {
-	app := iris.Default()
+	app := iris.New()
+
+	app.Get("/", func(ctx iris.Context) {
+		ctx.ServeFile(FileRootPath+"index.html", false)
+	})
+	app.Get("/vue-admin/{directory:path}", func(ctx context.Context) {
+		ctx.ServeFile(FileRootPath+ctx.Params().Get("directory"), false)
+	})
+
+	//app := iris.Default()
+
 	baseUrl := "/api"
 	app.Get(baseUrl+"/ping", HandlePingGet)
 	app.Post(baseUrl+"/login", controller.HandleLogin)
@@ -34,10 +54,11 @@ func main() {
 	{
 		patcher.Get("/list_page",controller.ListPatchesPages)
 		patcher.Delete("/remove",controller.RemovePatch)
-		//patcher.Delete("batch_remove")
+		patcher.Post("/batch_remove",controller.BatchRemovePatches)
 		//patcher.Put("edit")
 		patcher.Post("/add",controller.AddPatch)
 		patcher.Get("/download",controller.DownloadPatch)
+		patcher.Get("/file_info",controller.FileInfo)
 	}
 	// listen and serve on http://0.0.0.0:8080.
 
@@ -49,6 +70,8 @@ func main() {
 		ctx.Header("access-control-allow-methods","GET,HEAD,PUT,PATCH,POST,DELETE")
 		ctx.Header("Access-Control-Allow-Origin","*")
 	})
+
+	//app.StaticWeb("/dist","dist")
 
 	app.Run(iris.Addr(":8652"))
 }

@@ -47,7 +47,7 @@ func BatchRemovePatches(ctx context.Context) {
 		if err != nil {
 			panic("parse id int error")
 		}
-		delRes := dao.DelUser(idInt)
+		delRes := dao.DelPatch(idInt)
 		if(!delRes){
 			//删除失败则退出
 			break;
@@ -74,6 +74,18 @@ func EditPatch(ctx context.Context) {
 		"update_res":updateRes,
 	}
 	ctx.JSON(util.BuildIrisMap(true, "修改用户信息成功", userMap))
+}
+
+func FileInfo(ctx context.Context)  {
+	id := ctx.URLParam("id")
+	patchID, _ := strconv.Atoi(id)
+
+	fileInfos := dao.GetFileInfosByPatchID(patchID)
+
+	userMap := iris.Map{
+		"file_infos":fileInfos,
+	}
+	ctx.JSON(util.BuildIrisMap(true, "获取文件信息成功", userMap))
 }
 
 func AddPatch(ctx context.Context) {
@@ -109,6 +121,8 @@ func AddPatch(ctx context.Context) {
 		fmt.Println(fileInfo.LocalPath)
 		fmt.Println(currentTargetPath)
 		tools.CopyLocalFileToTarget(fileInfo.LocalPath,currentTargetPath,serial)
+
+		updateFileRecommend(getFileName(fileInfo.LocalPath),targetPath)
 	}
 	//make patch.sh
 	patchShellPath := tempBasePath+"/patch.sh"
@@ -131,12 +145,23 @@ func AddPatch(ctx context.Context) {
 
 	patch := dao.BuildPatch("", patchName, patchType, patchVersion, meta, patchShell, tgzFile)
 
-	insertPatch := dao.InsertPatch(patch)
+	insertPatch := dao.InsertPatch(&patch)
+
+	updateFileInfos(jsonMapArray,int(patch.ID))
 
 	resultMap := iris.Map{
 		"patch":insertPatch,
 	}
 	ctx.JSON(util.BuildIrisMap(true, "添加patch成功", resultMap))
+}
+
+func updateFileInfos(jsonMapArray []map[string]interface{}, patchID int){
+	for _,item := range jsonMapArray {
+		fileID := int(item["fileID"].(float64))
+		fileInfo := dao.GetFileInfoByID(fileID)
+		fileInfo.PatchID = patchID
+		dao.UpdateFileInfo(fileInfo)
+	}
 }
 func DownloadPatch(ctx context.Context) {
 	idStr := ctx.URLParam("id")
@@ -150,4 +175,30 @@ func DownloadPatch(ctx context.Context) {
 	ctx.Header("Content-Type","application/x-gzip")
 	ctx.Header("Content-Disposition","attachment;filename="+patch.NAME)
 	ctx.ServeFile(patchFile,false)
+}
+
+func updateFileRecommend(fileName string, path string )  {
+	fileNameIndex := strings.LastIndex(path,fileName)
+	if fileNameIndex != -1 {
+		path = path[:fileNameIndex]
+	}
+	recommendation,err := dao.GetRecommendation(fileName, path)
+	if err !=  nil {
+		fmt.Errorf(err.Error())
+		buildRecommendation := dao.BuildRecommendation("", fileName, path, "1")
+		dao.InsertRecommendation(&buildRecommendation)
+		return
+	}
+	recommendation.AppearTimes ++
+	dao.UpdateRecommendation(recommendation)
+}
+
+func getFileName(filePath string) string {
+	lastIndex := strings.LastIndex(filePath, "/")
+	if lastIndex == -1 {
+		return filePath
+	}else{
+		fileName := filePath[lastIndex+1:]
+		return fileName
+	}
 }

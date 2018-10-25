@@ -57,7 +57,7 @@ func ListPatches(patchName string, page util.Page) []Patch {
 	return patches
 }
 
-func InsertPatch(patch Patch) bool {
+func InsertPatch(patch *Patch) bool {
 	db, err := util.GetDBConnection()
 	if err != nil {
 		panic("connection failure")

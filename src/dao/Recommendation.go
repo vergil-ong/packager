@@ -5,6 +5,7 @@ import (
 	"util"
 	"strconv"
 	"fmt"
+	"github.com/kataras/iris/core/errors"
 )
 
 type Recommendation struct {
@@ -42,6 +43,32 @@ func ListRecommendations(fileName string, page util.Page) []Recommendation {
 	return recommendations
 }
 
+func GetRecommendation(fileName string, path string) (*Recommendation,error) {
+	db, dbErr := util.GetDBConnection()
+	if dbErr != nil {
+		panic("connection failure")
+	}
+
+	var recommendation Recommendation
+	where := db
+	if fileName != "" {
+		where = where.Where("file_name = ?", fileName,)
+	}
+	if path != "" {
+		where = where.Where("path = ?", path,)
+	}
+	where.Find(&recommendation)
+
+	defer db.Close()
+
+	var err error
+	if &recommendation == nil || recommendation.ID == 0 {
+		err = errors.New("cannot find recommendation")
+	}
+
+	return &recommendation,err
+}
+
 func ListRecommendationsMaxAppear(fileName string, page util.Page) []Recommendation {
 	db, err := util.GetDBConnection()
 	if err != nil {
@@ -58,6 +85,40 @@ func ListRecommendationsMaxAppear(fileName string, page util.Page) []Recommendat
 	defer db.Close()
 
 	return recommendations
+}
+
+func UpdateRecommendation(recommendation *Recommendation) bool {
+	db, err := util.GetDBConnection()
+	if err != nil {
+		panic("connection failure")
+	}
+
+	if err = db.Model(recommendation).Update(recommendation).Error; err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+
+	defer db.Close()
+
+	return true
+}
+
+func InsertRecommendation(recommendation *Recommendation) bool {
+	db, err := util.GetDBConnection()
+	if err != nil {
+		panic("connection failure")
+	}
+
+	e := db.Create(recommendation).Error
+	if e != nil {
+		err := e.Error()
+		fmt.Println(err)
+		return false
+	}
+
+	defer db.Close()
+
+	return true
 }
 
 func BuildRecommendation(

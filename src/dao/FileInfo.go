@@ -11,6 +11,7 @@ type FileInfo struct {
 	TargetPath 	string `gorm:"column:target_path" json:"target_path"`
 	LocalPath 	string `gorm:"column:local_path" json:"local_path"`
 	Group 		string `gorm:"column:group" json:"group"`
+	PatchID 	int `gorm:"column:patch_id" json:"patch_id"`
 }
 
 func (FileInfo) TableName() string {
@@ -27,6 +28,24 @@ func GetFileInfoByID(id int) FileInfo {
 	where := db
 	if id != -1 {
 		where = where.Where("id = ?", id,)
+	}
+	where.Find(&fileInfo)
+
+	defer db.Close()
+
+	return fileInfo
+}
+
+func GetFileInfosByPatchID(patchID int) []FileInfo {
+	db, err := util.GetDBConnection()
+	if err != nil {
+		panic("connection failure")
+	}
+
+	var fileInfo []FileInfo
+	where := db
+	if patchID != -1 {
+		where = where.Where("patch_id = ?", patchID,)
 	}
 	where.Find(&fileInfo)
 
